@@ -47,14 +47,26 @@ This ensures **tightness + stability**, combining the best of SFT and RL while k
 
 ## 📊 Main Results
 
-* **Math reasoning** (100k samples): +17.89 over base, outperforming DFT by +4.85.
-* **Medical knowledge** (10k samples): +10.65 over base, avoiding DFT collapse (-2.19).
-* **Code generation** (HumanEval/MBPP): best average score, proving cross-domain generalization.
-* **Efficiency**: Comparable cost to SFT (23.7% extra time), far cheaper than RL (>40× faster).
-
+### Performance Comparison
 <p align="center">
-  <img src="docs/figs/asft_results.png" width="600">
+  <img src="fig/main.png" width="800">
 </p>
+
+*Performance comparison of fine-tuning methods on medical and math benchmarks under different dataset scales. ASFT consistently outperforms other methods.*
+
+### Training Dynamics
+<p align="center">
+  <img src="fig/compare.png" width="800">
+</p>
+
+*Training dynamics comparison showing ASFT maintains stability through KL anchoring while DFT exhibits severe distributional drift.*
+
+### Cross-Model Performance
+<p align="center">
+  <img src="fig/scale.png" width="800">
+</p>
+
+*Comparison across different model architectures (LLaMA-2, Qwen2.5) demonstrating ASFT's consistent effectiveness across various model sizes and families.*
 
 ---
 
