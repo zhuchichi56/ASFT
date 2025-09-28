@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.env
+.venv
+env/
+venv/
+*.sqlite3
+.DS_Store
+.ipynb_checkpoints/
+
+math_evaluation/outputs/
