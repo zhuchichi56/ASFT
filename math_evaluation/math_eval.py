@@ -19,8 +19,8 @@ from data_loader import load_data
 from python_executor import PythonExecutor
 from model_utils import load_hf_lm_and_tokenizer, generate_completions
 
-# 获取你想要使用的GPU列表
-AVAILABLE_GPUS = ["3"]  # 根据你的需要修改这里
+# List of available GPU IDs
+AVAILABLE_GPUS = ["3"]  
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -105,8 +105,6 @@ def worker_process(rank, world_size, args, data_name, examples_chunk):
             pipeline_parallel_size=1,
             trust_remote_code=True,
             gpu_memory_utilization=0.8,
-            # 不需要指定device，因为只有一个GPU可见
-            # max_model_len=3048
         )
         tokenizer = None
         if args.apply_chat_template:

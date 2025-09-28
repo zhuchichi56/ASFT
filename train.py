@@ -249,8 +249,8 @@ def show_first_example(data_path: str, tokenizer: transformers.PreTrainedTokeniz
 
 
 def train(
-    model_name_or_path: str = "/volume/pt-train/users/wzhang/ghchen/zh/models/Llama-2-7b",
-    data_path: str = "/volume/pt-train/users/wzhang/ghchen/zh/code/caft/emergent_misalignment/src/med_data/caft_data/train_medmcqa_alpaca_10k.jsonl",
+    model_name_or_path: str = "models/Llama-2-7b",
+    data_path: str = "data/train_medmcqa_alpaca_10k.jsonl",
     cache_dir: str = None,
     model_max_length: int = 512,
     per_device_train_batch_size: int = 4,
@@ -375,4 +375,3 @@ def train(
 if __name__ == "__main__":
     fire.Fire(train)
     
- 

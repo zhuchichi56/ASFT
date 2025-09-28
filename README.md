@@ -90,7 +90,7 @@ This ensures **tightness + stability**, combining the best of SFT and RL while k
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/your-org/ASFT.git
+git clone https://github.com/zhuchichi56/ASFT.git
 cd ASFT
 pip install -r requirements.txt
 ```
@@ -101,78 +101,32 @@ Train an ASFT model with default settings:
 
 ```bash
 python train.py \
-    --model llama-2-7b \
-    --method asft \
-    --data data/medmcqa \
-    --lambda 0.05 \
-    --epochs 3 \
-    --lr 2e-5
+    --momodel_name_or_pathdel llama-2-7b \
+    --mode asft \
+    --data_path data/medmcqa \
+    --kl_weight 0.05 \
+    --num_train_epochs 3 \
+    --learning_rate 2e-5
 ```
-
-#### 3. Advanced Training Options
-
-For custom training configurations:
-
+or 
 ```bash
-# Training with custom hyperparameters
-python train.py \
-    --model llama-2-7b \
-    --method asft \
-    --data data/math_reasoning \
-    --lambda 0.1 \
-    --epochs 5 \
-    --lr 1e-5 \
-    --batch_size 32 \
-    --gradient_accumulation_steps 4 \
-    --warmup_ratio 0.1 \
-    --save_steps 500 \
-    --eval_steps 100
+bash train.sh
 ```
 
-#### 4. Multi-Domain Training
 
-Train on multiple datasets simultaneously:
-
-```bash
-python train.py \
-    --model llama-2-7b \
-    --method asft \
-    --data data/medmcqa,data/math_reasoning,data/code_generation \
-    --lambda 0.05 \
-    --multi_domain \
-    --domain_weights 0.3,0.4,0.3
-```
-
-#### 5. Evaluation
+#### 3. Evaluation
 
 Evaluate trained models on various benchmarks:
 
 ```bash
-# Single benchmark evaluation
-python eval.py \
-    --model checkpoints/asft_model \
-    --bench medical
+# Math evaluation
+bash math_evaluation/eval.sh
 
-# Multi-benchmark evaluation
-python eval.py \
-    --model checkpoints/asft_model \
-    --bench medical,math,code \
-    --output_dir results/ \
-    --batch_size 16
+# Medical evaluation
+python medeval/vllm_medical_test.py
 ```
 
-#### 6. Comparison with Baselines
 
-Compare ASFT with other methods:
-
-```bash
-# Evaluate multiple methods
-python compare.py \
-    --models checkpoints/sft_model,checkpoints/dft_model,checkpoints/asft_model \
-    --methods sft,dft,asft \
-    --bench math_reasoning \
-    --output results/comparison.json
-```
 
 ---
 

@@ -10,11 +10,7 @@ SPLIT="test"
 NUM_TEST_SAMPLE=-1
 
 # English open datasets
-# DATA_NAME="aime24,amc23"
 DATA_NAME="math_oai,minerva_math,olympiadbench,aime24,amc23"
-# DATA_NAME="math_oai,gsm8k"
-# DATA_NAME="gsm8k,math,svamp,asdiv,mawps,carp_en,tabmwp,minerva_math,gaokao2023en,olympiadbench,college_math"
-# DATA_NAME="gsm8k,math"
 TOKENIZERS_PARALLELISM=false \
 python3 -u math_eval.py \
     --model_name_or_path ${MODEL_NAME_OR_PATH} \
