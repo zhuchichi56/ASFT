@@ -3,6 +3,17 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2509.XXXXX-b31b1b.svg)](https://arxiv.org/abs/2509.XXXXX)
 *A principled and efficient post-training method for large language models*
 
+## 👥 Authors
+
+**He Zhu**¹*, **Junyou Su**¹*, **Peng Lai**², **Ren Ma**³, **Wenjia Zhang**¹, **Linyi Yang**², **Guanhua Chen**²†
+
+¹Peking University
+²Southern University of Science and Technology
+³Shanghai Artificial Intelligence Laboratory
+
+*Equal Contribution
+†Corresponding Author
+
 ---
 
 ## 🚀 Introduction
@@ -171,7 +182,7 @@ If you find this work useful, please cite:
 
 ```bibtex
 @article{zhu2025asft,
-  title={Anchored Supervised Fine-Tuning: A Principled Approach to Stable and Efficient Post-Training},
+  title={Anchored Supervised Fine-Tuning},
   author={Zhu, He and Su, Junyou and Lai, Peng and Ma, Ren and Zhang, Wenjia and Yang, Linyi and Chen, Guanhua},
   journal={arXiv preprint arXiv:2509.XXXXX},
   year={2025}
