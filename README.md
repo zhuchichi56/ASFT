@@ -135,11 +135,14 @@ python medeval/vllm_medical_test.py
 If you find this work useful, please cite:
 
 ```bibtex
-@article{zhu2025asft,
-  title={Anchored Supervised Fine-Tuning},
-  author={Zhu, He and Su, Junyou and Lai, Peng and Ma, Ren and Zhang, Wenjia and Yang, Linyi and Chen, Guanhua},
-  journal={arXiv preprint arXiv:2509.XXXXX},
-  year={2025}
+@misc{zhu2025anchoredsupervisedfinetuning,
+      title={Anchored Supervised Fine-Tuning}, 
+      author={He Zhu and Junyou Su and Peng Lai and Ren Ma and Wenjia Zhang and Linyi Yang and Guanhua Chen},
+      year={2025},
+      eprint={2509.23753},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2509.23753}, 
 }
 ```
 
