@@ -1,21 +1,26 @@
 #!/bin/bash
 # train.sh - Script to run ASFT training
 
+set -euo pipefail
+
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+TRAIN_SCRIPT=${TRAIN_SCRIPT:-"$SCRIPT_DIR/train_v2.py"}
+
 # ============ User Configurable Variables ============
 # Select which GPUs to use (comma-separated)
 export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-"0,1"}
 
 # Path to the pretrained model (make sure the model is downloaded)
-MODEL_PATH=${MODEL_PATH:-"/path/to/your/model"}
+MODEL_PATH=${MODEL_PATH:-"models/your-model"}
 
 # Path to the training data
-DATA_PATH=${DATA_PATH:-"/path/to/your/training_data.jsonl"}
+DATA_PATH=${DATA_PATH:-"data/your-training-data.jsonl"}
 
 # Output directory
-OUTPUT_DIR=${OUTPUT_DIR:-"/path/to/your/output_dir"}
+OUTPUT_DIR=${OUTPUT_DIR:-"output/your-run"}
 
 # Training parameters
-MODE=${MODE:-"asft"} # Training mode: sft, sft+kl, asft, dft+kl
+MODE=${MODE:-"asft"} # Training mode: sft, dft, sft+kl, asft
 MODEL_MAX_LENGTH=${MODEL_MAX_LENGTH:-2048}
 GLOBAL_BATCH_SIZE=${GLOBAL_BATCH_SIZE:-256}
 LEARNING_RATE=${LEARNING_RATE:-5e-5}
@@ -35,13 +40,13 @@ echo "LEARNING_RATE=$LEARNING_RATE"
 echo "NUM_TRAIN_EPOCHS=$NUM_TRAIN_EPOCHS"
 echo "KL_WEIGHT=$KL_WEIGHT"
 
-python train.py \
-    --mode $MODE \
-    --model_max_length $MODEL_MAX_LENGTH \
-    --global_batch_size $GLOBAL_BATCH_SIZE \
-    --learning_rate $LEARNING_RATE \
-    --num_train_epochs $NUM_TRAIN_EPOCHS \
-    --kl_weight $KL_WEIGHT \
-    --model_name_or_path $MODEL_PATH \
-    --data_path $DATA_PATH \
-    --output_dir $OUTPUT_DIR
+python "$TRAIN_SCRIPT" \
+    --mode "$MODE" \
+    --model_max_length "$MODEL_MAX_LENGTH" \
+    --global_batch_size "$GLOBAL_BATCH_SIZE" \
+    --learning_rate "$LEARNING_RATE" \
+    --num_train_epochs "$NUM_TRAIN_EPOCHS" \
+    --kl_weight "$KL_WEIGHT" \
+    --model_name_or_path "$MODEL_PATH" \
+    --data_path "$DATA_PATH" \
+    --output_dir "$OUTPUT_DIR"

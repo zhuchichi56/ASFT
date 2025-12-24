@@ -97,13 +97,13 @@ pip install -r requirements.txt
 
 #### 2. Basic Training
 
-Train an ASFT model with default settings:
+Train an ASFT model with default settings (v2 supports more model families and multi-GPU training):
 
 ```bash
-python train.py \
-    --momodel_name_or_pathdel llama-2-7b \
+python train_v2.py \
+    --model_name_or_path models/your-model \
     --mode asft \
-    --data_path data/medmcqa \
+    --data_path data/your-data.jsonl \
     --kl_weight 0.05 \
     --num_train_epochs 3 \
     --learning_rate 2e-5
@@ -113,17 +113,21 @@ or
 bash train.sh
 ```
 
+> Warning: When using DeepSpeed, numerical differences can make DFT variants ineffective.
 
 #### 3. Evaluation
 
-Evaluate trained models on various benchmarks:
+Evaluate trained models on various benchmarks. See `eval/README.md` for detailed steps and required inputs.
 
 ```bash
+# AlpacaEval-style evaluation
+python /volume/pt-train/users/wzhang/ghchen/zh/valid_code/ASFT-dev/eval/alpaca_eval_test.py
+
 # Math evaluation
-bash math_evaluation/eval.sh
+bash eval/math_evaluation/eval.sh
 
 # Medical evaluation
-python medeval/vllm_medical_test.py
+python eval/medeval/vllm_medical_test.py
 ```
 
 

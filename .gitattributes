@@ -1,1 +1,11 @@
 *.jsonl filter=lfs diff=lfs merge=lfs -text
+eval/math_evaluation/data/tabmwp/test.jsonl filter=lfs diff=lfs merge=lfs -text
+eval/alpacaeval/results/llama_3_1_8B_instruct/alpaca_eval_output_weighted_alpaca_eval_gpt-4o-2024-08-06_vs_gpt4_1106_preview.json/weighted_alpaca_eval_gpt-4o-2024-08-06/annotations.json filter=lfs diff=lfs merge=lfs -text
+eval/alpacaeval/results/llama_3_1_8B_instruct/annotations_cache_annotator_weighted_alpaca_eval_gpt-4o-2024-08-06_vs_gpt4_1106_preview.json filter=lfs diff=lfs merge=lfs -text
+eval/alpacaeval/src/alpaca_eval/evaluators_configs/weighted_alpaca_eval_gpt-4o-2024-08-06/annotations_seed0_configs.json filter=lfs diff=lfs merge=lfs -text
+eval/alpacaeval/src/alpaca_eval/evaluators_configs/weighted_alpaca_eval_gpt-4o-mini-2024-07-18/annotations_seed0_config.json filter=lfs diff=lfs merge=lfs -text
+math_evaluation/data/tabmwp/test.jsonl filter=lfs diff=lfs merge=lfs -text
+data/numina_cot_100k.jsonl filter=lfs diff=lfs merge=lfs -text
+data/numina_cot_30k.jsonl filter=lfs diff=lfs merge=lfs -text
+data/magpie10k.jsonl filter=lfs diff=lfs merge=lfs -text
+data/numina_cot_10k.jsonl filter=lfs diff=lfs merge=lfs -text
