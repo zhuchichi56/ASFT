@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import transformers
 from torch.utils.data import Dataset
 from transformers import Trainer
+from peft import LoraConfig, get_peft_model, TaskType
 os.environ["WANDB_MODE"] = "offline"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ PROMPT_DICT = {
 
 @dataclass
 class ModelArguments:
-    model_name_or_path: str = field(default="models/Llama-2-7b")
+    model_name_or_path: str = field(default="/volume/pt-train/users/wzhang/ghchen/zh/models/Llama-2-7b")
 
 @dataclass
 class DataArguments:
@@ -70,6 +71,25 @@ class EnhancedTrainer(Trainer):
             self.original_model.eval()
         print(f"Training mode: {mode}, alpha: {alpha}")
     
+    def get_reference_logits(self, model, inputs):
+        """
+        If LoRA is enabled:
+            reference = base model (adapter disabled)
+        Else:
+            reference = self.original_model
+        """
+        if hasattr(model, "disable_adapter"):
+            with model.disable_adapter():
+                ref_outputs = model(**inputs)
+                ref_logits = ref_outputs.logits
+        else:
+            with torch.no_grad():
+                ref_outputs = self.original_model(**inputs)
+                ref_logits = ref_outputs.logits
+
+        return ref_logits
+    
+
     def compute_loss(self, model, inputs, return_outputs=False, num_items_in_batch=None):
         labels = inputs.get("labels")
         outputs = model(**inputs)
@@ -87,10 +107,7 @@ class EnhancedTrainer(Trainer):
             else:
                 loss_fct = torch.nn.CrossEntropyLoss(reduction='none')
                 token_losses = loss_fct(shift_logits, shift_labels)
-                # loss_fct = torch.nn.CrossEntropyLoss(reduction='sum', ignore_index=IGNORE_INDEX)
-
-                # token_losses = loss_fct(shift_logits, shift_labels) / valid_mask.sum()
-                
+    
                 if self.mode == "sft":
                     weighted_losses = token_losses
                     
@@ -101,41 +118,63 @@ class EnhancedTrainer(Trainer):
                     weighted_losses = token_losses * weights
                     
                 elif self.mode == "sft+kl":
-                    if self.original_model is not None:
-                        with torch.no_grad():
-                            orig_outputs = self.original_model(**inputs)
-                            orig_logits = orig_outputs.get("logits")[..., :-1, :].contiguous()
-                            # Ensure sequence lengths match
-                            orig_logits = orig_logits.view(-1, orig_logits.size(-1))[:shift_logits.size(0)]
-                        if orig_logits.size(0) == shift_logits.size(0):
-                            kl_div = F.kl_div(
-                                F.log_softmax(shift_logits, dim=-1),
-                                F.softmax(orig_logits, dim=-1),
-                                reduction='none'
-                            ).sum(dim=-1)
-                            weighted_losses = token_losses + self.kl_weight * kl_div
-                        else:
-                            weighted_losses = token_losses
-                    else:
-                        weighted_losses = token_losses
+                    # if self.original_model is not None:
+                    #     with torch.no_grad():
+                    #         orig_outputs = self.original_model(**inputs)
+                    #         orig_logits = orig_outputs.get("logits")[..., :-1, :].contiguous()
+                    #         # Ensure sequence lengths match
+                    #         orig_logits = orig_logits.view(-1, orig_logits.size(-1))[:shift_logits.size(0)]
+                    #     if orig_logits.size(0) == shift_logits.size(0):
+                    #         kl_div = F.kl_div(F.log_softmax(shift_logits, dim=-1), F.softmax(orig_logits, dim=-1), reduction='none').sum(dim=-1)
+                    #         weighted_losses = token_losses + self.kl_weight * kl_div
+                    #     else:
+                    #         weighted_losses = token_losses
+                    # else:
+                    with torch.no_grad():
+                        ref_logits = self.get_reference_logits(model, inputs)
+                        ref_logits = ref_logits[..., :-1, :].contiguous()
+                        ref_logits = ref_logits.view(-1, ref_logits.size(-1))[:shift_logits.size(0)]
 
+                    kl_div = F.kl_div(
+                        F.log_softmax(shift_logits, dim=-1),
+                        F.softmax(ref_logits, dim=-1),
+                        reduction="none",
+                    ).sum(dim=-1)
+
+                    weighted_losses = token_losses + self.kl_weight * kl_div
+                                            
                 elif self.mode == "asft":
                     probs = torch.softmax(shift_logits, dim=-1)
                     valid_labels = torch.clamp(shift_labels, min=0, max=probs.size(-1)-1)
                     weights = probs.gather(1, valid_labels.unsqueeze(-1)).squeeze(-1).detach()
                     dft_losses = token_losses * weights
-                    if self.original_model is not None:
-                        with torch.no_grad():
-                            orig_outputs = self.original_model(**inputs)
-                            orig_logits = orig_outputs.get("logits")[..., :-1, :].contiguous()
-                            orig_logits = orig_logits.view(-1, orig_logits.size(-1))[:shift_logits.size(0)]
-                        if orig_logits.size(0) == shift_logits.size(0):
-                            kl_div = F.kl_div(F.log_softmax(shift_logits, dim=-1), F.softmax(orig_logits, dim=-1), reduction='none').sum(dim=-1)
-                            weighted_losses = dft_losses + self.kl_weight * kl_div
-                        else:
-                            weighted_losses = dft_losses
-                    else:
-                        weighted_losses = dft_losses
+                    # if self.original_model is not None:
+                    #     with torch.no_grad():
+                    #         orig_outputs = self.original_model(**inputs)
+                    #         orig_logits = orig_outputs.get("logits")[..., :-1, :].contiguous()
+                    #         orig_logits = orig_logits.view(-1, orig_logits.size(-1))[:shift_logits.size(0)]
+                    #     if orig_logits.size(0) == shift_logits.size(0):
+                    #         kl_div = F.kl_div(F.log_softmax(shift_logits, dim=-1), F.softmax(orig_logits, dim=-1), reduction='none').sum(dim=-1)
+                    #         weighted_losses = dft_losses + self.kl_weight * kl_div
+                    #     else:
+                    #         weighted_losses = dft_losses
+                    # else:
+                    with torch.no_grad():
+                        ref_logits = self.get_reference_logits(model, inputs)
+                        ref_logits = ref_logits[..., :-1, :].contiguous()
+                        ref_logits = ref_logits.view(-1, ref_logits.size(-1))[:shift_logits.size(0)]
+
+                    kl_div = F.kl_div(
+                        F.log_softmax(shift_logits, dim=-1),
+                        F.softmax(ref_logits, dim=-1),
+                        reduction="none",
+                    ).sum(dim=-1)
+
+                    weighted_losses = dft_losses + self.kl_weight * kl_div
+
+
+                loss = (weighted_losses[valid_mask].sum() / valid_mask.sum())
+
         else:
             loss = outputs.loss
         
@@ -205,7 +244,7 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, dat
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 
 
-
+# TODO: 这个应该show两个例子，一个bs;
 def show_first_example(data_path: str, tokenizer: transformers.PreTrainedTokenizer):
     """Show first training example with tokenization details"""
     print("\n" + "="*50)
@@ -266,12 +305,16 @@ def train(
     num_train_epochs: float = 3.0,
     learning_rate: float = 2e-5,
     global_batch_size: int = 64,
-    mode: str = "sft",  # sft, dft, sft+kl, asft
+    mode: str = "sft",  # sft, dft, sft+kl, asft, dft+sft
     kl_weight: float = 0.1,
     alpha: float = 0.1,
     clip_min: float = 0.1,
     clip_max: float = 2.0,
     output_dir: str = None,
+    use_lora: bool = False,
+    lora_r: int = 8,
+    lora_alpha: int = 16,
+    lora_dropout: float = 0.05,
     **kwargs
 ):
     """Enhanced training with multiple DFT variants"""
@@ -353,6 +396,20 @@ def train(
         model_args.model_name_or_path,
         **model_kwargs
     )
+    
+    if use_lora:
+        logger.info(f"Using LoRA with r={lora_r}, alpha={lora_alpha}, dropout={lora_dropout}")
+        lora_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            r=lora_r,
+            lora_alpha=lora_alpha,
+            lora_dropout=lora_dropout,
+            target_modules=["q_proj", "v_proj"],
+            bias="none",
+        )
+
+        model = get_peft_model(model, lora_config)
+        model.print_trainable_parameters()
 
     # In distributed mode, move model to the correct device
     if is_distributed:
@@ -403,7 +460,7 @@ def train(
 
     # Load original model for KL modes
     original_model = None
-    if "kl" in mode or mode == "asft":
+    if ("kl" in mode or mode == "asft") and not use_lora:
         print("Loading original model for KL divergence...")
 
         original_model_kwargs = {
