@@ -31,6 +31,8 @@ This ensures **tightness + stability**, combining the best of SFT and RL while k
 
 ## 📰 News
 
+**🔥 2026-05-02** (recommended): New [`verl`](https://github.com/zhuchichi56/ASFT/tree/verl) branch — SFT / DFT / ASFT on top of the [verl](https://github.com/volcengine/verl) FSDP training framework, with built-in vLLM-based **medical MCQ evaluation** (medqa / mmlu_medical / medmcqa). One-shot script: `bash run_verl.sh`. See [verl branch usage](#-verl-branch-recommended) below.
+
 **📄 2026-02-12**: ASFT has been merged into LLaMA-Factory main ([commit #10174](https://github.com/hiyouga/LLaMA-Factory/commit/675ce8cc7f70a65de403ccfd05195ca3ea6f3bd4)).  
 Latest release is `v0.9.4`, so ASFT support is currently available on main and will be included in the next tagged release.
 
@@ -39,6 +41,73 @@ Latest release is `v0.9.4`, so ASFT support is currently available on main and w
 **📄 2026-01-23**: Added support for DeepSpeed and LoRA.
 
 **📄 2025-09-28**: Released ASFT code and paper - [Paper](asft.pdf) | [Code](https://github.com/zhuchichi56/ASFT)
+
+---
+
+## ⭐ verl branch (recommended)
+
+The `verl` branch is the **recommended** way to reproduce ASFT going forward. It ships:
+
+- A self-contained `verl/` sub-tree built on [verl](https://github.com/volcengine/verl) v0.6.1 (FSDP).
+- A unified `fsdp_sft_trainer` supporting `loss_mode ∈ {sft, dft, asft}` — switch with a single config key.
+- A `recipe/asft_bio/` pipeline that prepares the bio/med dataset, trains, and evaluates on the medical MCQ benchmarks (medqa / mmlu_medical / medmcqa) via vLLM.
+- A top-level **one-shot script** that does the full train → eval loop on 8 GPUs (7 train + 1 eval).
+
+### One-shot
+
+```bash
+git clone -b verl https://github.com/zhuchichi56/ASFT.git
+cd ASFT
+pip install -r verl/requirements.txt           # verl framework deps
+pip install -e ./verl                          # install the verl package
+bash run_verl.sh                               # default: sft+dft+asft, LLaMA-2-7B-base, 3 epochs
+```
+
+This will:
+1. Download `Llama-2-7b-hf` (NousResearch mirror) into `./models/` if missing
+2. Inject a minimal Alpaca chat template into the tokenizer (idempotent)
+3. Prepare the bio/med train/val parquet under `verl/recipe/asft_bio/data/med/`
+4. Train **SFT → DFT → ASFT** sequentially on GPUs 0–6
+5. After each mode, evaluate the saved checkpoint on medqa / mmlu_medical / medmcqa using GPU 7 (vLLM)
+
+Outputs go to `./checkpoints/asft_verl/<mode>/` (training log, ckpts, `medeval_<mode>.json`).
+
+### Common overrides
+
+```bash
+# Run only ASFT, smaller smoke test
+LOSS_MODES=asft EPOCHS=1 TRAIN_MAX_SAMPLES=1000 bash run_verl.sh
+
+# Custom model
+MODEL_ID=meta-llama/Llama-2-7b-hf MODEL_PATH=/path/to/llama2 bash run_verl.sh
+
+# Tune ASFT KL anchor strength
+ASFT_KL_COEF=0.05 LOSS_MODES=asft bash run_verl.sh
+
+# Different GPU layout (e.g., 4 train + 1 eval on a 5-GPU box)
+NUM_GPUS=4 CUDA_TRAIN=0,1,2,3 CUDA_EVAL=4 bash run_verl.sh
+```
+
+### Layout
+
+```
+ASFT/
+├── run_verl.sh                              # one-shot entry point
+└── verl/
+    ├── verl/trainer/
+    │   ├── fsdp_sft_trainer.py              # loss_mode dispatch (sft/dft/asft)
+    │   └── config/sft_trainer.yaml          # asft_kl_coef, benchmark_eval_dir
+    ├── verl/utils/med_mcq.py                # MCQ prompt + answer extraction
+    ├── recipe/asft_bio/
+    │   ├── prepare_all_data.py              # build train/val parquet from HF chichi56/ASFT
+    │   └── run_sft_variants_med.sh          # main 8-GPU launcher
+    ├── eval/medeval/
+    │   ├── run_med_eval.py                  # vLLM medical MCQ evaluator
+    │   └── test_data/{medqa,mmlu_medical,medmcqa}_test.jsonl
+    └── scripts/build_medeval_val_datasets.py
+```
+
+> **Why `verl` over the legacy `train_v2.py` path?** The verl track gives you (a) FSDP-2 / sequence parallel out of the box for 7B+ scale, (b) a single launcher that sweeps SFT/DFT/ASFT for clean apples-to-apples comparison, (c) integrated medical MCQ benchmarking without touching extra eval scripts. Use the legacy path below only if you specifically need the LLaMA-Factory- or DeepSpeed-style entry points.
 
 ---
 
