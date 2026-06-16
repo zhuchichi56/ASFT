@@ -1093,9 +1093,14 @@ class FSDPSFTTrainer:
 
                 if rank == 0:
                     for i in range(end - start):
-                        # Find last non-padding token position
+                        # Find last non-padding token position.
+                        # Tokenizer uses LEFT padding (set above), so real tokens are
+                        # right-aligned; the last real token is the rightmost mask==1 index.
+                        # (Using sum()-1 here is the RIGHT-padding formula and points into
+                        # the left pad region, which silently degrades accuracy.)
                         mask_row = batch_mask[i]
-                        last_pos = mask_row.sum().item() - 1
+                        nz = mask_row.nonzero(as_tuple=True)[0]
+                        last_pos = nz[-1].item() if nz.numel() > 0 else mask_row.shape[0] - 1
                         next_token_logits = logits[i, last_pos, :]  # (vocab,)
 
                         # Get logprobs for A, B, C, D
