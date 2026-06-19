@@ -207,14 +207,13 @@ python download_data.py --output_dir data
 If you find this work useful, please cite:
 
 ```bibtex
-@misc{zhu2025anchoredsupervisedfinetuning,
-      title={Anchored Supervised Fine-Tuning}, 
-      author={He Zhu and Junyou Su and Peng Lai and Ren Ma and Wenjia Zhang and Linyi Yang and Guanhua Chen},
-      year={2025},
-      eprint={2509.23753},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2509.23753}, 
+@inproceedings{
+zhu2026anchored,
+title={Anchored Supervised Fine-Tuning},
+author={He Zhu and Junyou Su and Peng Lai and Ren Ma and Wenjia Zhang and Linyi Yang and Guanhua Chen},
+booktitle={The Fourteenth International Conference on Learning Representations},
+year={2026},
+url={https://openreview.net/forum?id=PORko7QT64}
 }
 ```
 
